@@ -112,6 +112,7 @@ Else {
     Copy-Item $PSCommandPath $scriptPath
     
     If ($alreadyInstalled) {
+        Stop-ScheduledTask -TaskName $taskName
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
     }
 
