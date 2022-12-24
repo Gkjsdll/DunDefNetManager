@@ -5,12 +5,17 @@ This script automatically disables all but one adapter while Dungeon Defenders i
 
 By default, this script installs itself to your system and runs automatically. To avoid the install, you can set the [portableMode](#portablemode) option to `$true`.
 
-# How to run, install, or update
-1. Download the latest version of this script
-2. Change any options
-3. Run PowerShell as administrator
-    - [How to](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell?view=powershell-7.3#with-administrative-privileges-run-as-administrator)
+This script requires being run as administrator.
+
+# How to run this script
+1. Download the [latest version](https://github.com/Gkjsdll/DunDefNetManager/releases)
+2. Change any options in the downloaded script
+3. Run PowerShell as administrator ([example](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell?view=powershell-7.3#with-administrative-privileges-run-as-administrator))
 4. Run the script to install and run the script
+    1. Open the folder you downloaded the script to
+    2. Right click on the address bar, then click "Copy address as text" ([example](copy-address-as-text.png))
+    2. Type `cd ""` then hit the left arrow key 
+    3. Hit enter
 
 # Options
 
