@@ -53,6 +53,10 @@ The name of the task created during install to run the script automatically.
 ### waitSeconds
 (`default: 15`)
 
-Determines how long to wait between enabling normal & HyperV virtual network interfaces. An error will be shown when running [portableMode](#portablemode) if you have any HyperV interfaces which need more time, in which case you should increase this number.
+Ignored if you do not have any Hyper V virtual network interfaces.
+
+Determines how long to wait between re-enabling normal & HyperV virtual network interfaces.
+
+An error will be shown when running [portableMode](#portablemode) if you have any HyperV interfaces which need more time, in which case you should increase this number.
 
 [^1]: [Steam discussion on issue hosting game](https://steamcommunity.com/app/65800/discussions/0/617320628261238972/)

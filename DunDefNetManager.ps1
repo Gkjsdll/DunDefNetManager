@@ -104,10 +104,12 @@ function Invoke-Manager() {
 
         Write-Output "Dungeon Defenders has exited, re-enabling network interfaces"
         Enable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
-        $hyperVInterfaceNames `
-        | Out-File -FilePath $disabledAdaptersPath
-        Start-Sleep $waitSeconds
-        Enable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
+        If ($hyperVInterfaceNames) {
+            $hyperVInterfaceNames `
+            | Out-File -FilePath $disabledAdaptersPath
+            Start-Sleep $waitSeconds
+            Enable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
+        }
         Remove-Item -Path $disabledAdaptersPath
     }
 }
@@ -151,9 +153,13 @@ function Recover-Adapters() {
     }
 
     $adapters = Get-Content -Path $disabledAdaptersPath
-    Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
-    Start-Sleep $waitSeconds
-    Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
+    Try {
+        Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
+    }
+    Catch {
+        Start-Sleep $waitSeconds
+        Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
+    }
     Remove-Item $disabledAdaptersPath
 }
 
