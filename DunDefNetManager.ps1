@@ -1,6 +1,7 @@
 #Requires -RunAsAdministrator
 
-#TODO: Track disabled adapters & reenable them if script is stopped at a bad time
+# Set to true to run the script in-place without installing it to the system
+$portableMode = $true
 
 # Set to false in order to manually specify the network interface which should be used when playing Dungeon Defenders
 $autoDetectPrimaryInterface = $true
@@ -112,35 +113,35 @@ function Invoke-Manager() {
 }
 
 function Main() {
-    If ($PSCommandPath -eq $scriptPath) {
+    If ($portableMode -Or $PSCommandPath -eq $scriptPath) {
         Invoke-Manager
+        Return
+    }
+
+    # Check if task already exists
+    Get-ScheduledTask -TaskName $taskName `
+        -ErrorAction SilentlyContinue `
+        -OutVariable taskExists `
+    | Out-Null
+
+    # Copy script to destintaion to install/update
+    mkdir -Force $scriptDirPath `
+    | Out-Null
+    Copy-Item $PSCommandPath $scriptPath
+    
+    # Stop & delete existing task
+    If ($taskExists) {
+        Stop-ScheduledTask -TaskName $taskName
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+    }
+
+    Initialize-Task
+
+    If ($taskExists) {
+        Write-Output "Updated script and task"
     }
     Else {
-        # Check if task already exists
-        Get-ScheduledTask -TaskName $taskName `
-            -ErrorAction SilentlyContinue `
-            -OutVariable taskExists `
-        | Out-Null
-    
-        # Copy script to destintaion to install/update
-        mkdir -Force $scriptDirPath `
-        | Out-Null
-        Copy-Item $PSCommandPath $scriptPath
-        
-        # Stop & delete existing task
-        If ($taskExists) {
-            Stop-ScheduledTask -TaskName $taskName
-            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
-        }
-    
-        Initialize-Task
-    
-        If ($taskExists) {
-            Write-Output "Updated script and task"
-        }
-        Else {
-            Write-Output "Installed script as a task & started task"
-        }
+        Write-Output "Installed script as a task & started task"
     }
 }
 
