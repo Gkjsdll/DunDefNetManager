@@ -145,7 +145,7 @@ function Main() {
 }
 
 function Recover-Adapters() {
-    If (Test-Path $disabledAdaptersPath) {
+    If (-Not (Test-Path -Path $disabledAdaptersPath)) {
         Return
     }
 
