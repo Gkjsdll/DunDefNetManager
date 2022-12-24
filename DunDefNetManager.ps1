@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 
 # Set to true to run the script in-place without installing it to the system
-$portableMode = $true
+$portableMode = $false
 
 # Set to false in order to manually specify the network interface which should be used when playing Dungeon Defenders
 $autoDetectPrimaryInterface = $true
