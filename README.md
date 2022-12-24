@@ -1,15 +1,15 @@
 # What is this script
-[Dungeon Defenders](https://store.steampowered.com/app/65800/Dungeon_Defenders/) has issues hosting multiplayer matches when more than one network adapter is enabled. [^1] This script does the following:
-- Copies itself to your system
-- Sets up a task to automatically run the script whenever any user logs on
-- Disables all but one network adapter when Dungeon Defenders is running
-- Reenables adapters after Dungeon Defenders closes
-- Starts running immediately after install
+[Dungeon Defenders](https://store.steampowered.com/app/65800/Dungeon_Defenders/) has issues hosting multiplayer matches when more than one network adapter is enabled. [^1]
+
+This script automatically disables all but one adapter while Dungeon Defenders is running, then re-enables them after the game closes. It also recovers if your computer crashes & still re-enables the adapters.
+
+By default, this script installs itself to your system and runs automatically. To avoid the install, you can set the [portableMode](#portablemode) option to `$true`.
 
 # How to run, install, or update
 1. Download the latest version of this script
 2. Change any options
-3. Run powershell as administrator
+3. Run PowerShell as administrator
+    - [How to](https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/starting-windows-powershell?view=powershell-7.3#with-administrative-privileges-run-as-administrator)
 4. Run the script to install and run the script
 
 # Options
