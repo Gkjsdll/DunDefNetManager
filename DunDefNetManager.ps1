@@ -17,7 +17,7 @@ $taskName = "Dungeon Defenders Network Manager"
 # Set higher if you're getting the error, want to avoid it, and your machine takes longer to be re-create all HyperV virtual adapters 
 $waitSeconds = 15
 
-function Invoke-DunDefNetManager() {
+function Invoke() {
     While ($true) {
         Write-Output "Waiting for Dungeon Defenders to start..."
 
@@ -56,6 +56,8 @@ function Invoke-DunDefNetManager() {
         Write-Output $nonHyperVInterfaceNames
 
         Disable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
+        $hyperVInterfaces `
+            | Out-File -FilePath
         Disable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
 
         Write-Output "`nWaiting for Dungeon Defenders to exit..."
@@ -66,13 +68,13 @@ function Invoke-DunDefNetManager() {
         Enable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
         Start-Sleep $waitSeconds
         Enable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
-        Remove-Item $disabledAdaptersPath
     }
 }
 
-function Install-DunDefNetManager-Task() {
+# Register task &
+function Install-And-Start() {
     $action = New-ScheduledTaskAction `
-        -Execute "Powershell.exe" `
+        -Execute "powershell.exe" `
         -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File $scriptPath"
 
     $principal = New-ScheduledTaskPrincipal `
@@ -100,26 +102,29 @@ function Install-DunDefNetManager-Task() {
 }
 
 If ($PSCommandPath -eq $scriptPath) {
-    Invoke-DunDefNetManager
+    Invoke
 }
 Else {
+    # Check if task already exists
     Get-ScheduledTask -TaskName $taskName `
         -ErrorAction SilentlyContinue `
-        -OutVariable alreadyInstalled `
+        -OutVariable taskExists `
         | Out-Null
 
+    # Copy script to destintaion to install/update
     mkdir -Force $scriptDirPath `
         | Out-Null
     Copy-Item $PSCommandPath $scriptPath
     
-    If ($alreadyInstalled) {
+    # Stop & delete existing task
+    If ($taskExists) {
         Stop-ScheduledTask -TaskName $taskName
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
     }
 
-    Install-DunDefNetManager-Task
+    Install-And-Start
 
-    If ($alreadyInstalled) {
+    If ($taskExists) {
         Write-Output "Updated script and task"
     }
     Else {
