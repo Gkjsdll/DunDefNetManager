@@ -27,29 +27,29 @@ function Invoke-DunDefNetManager() {
 
         $primaryNetworkInterfaceName = $(
             If ($autoDetectPrimaryInterface) {
-                Get-NetAdapter |`
-                    Where-Object Status -eq Up |`
-                    Sort-Object ifIndex |`
-                    Select-Object -First 1 -Expand Name
+                Get-NetAdapter `
+                    | Where-Object Status -eq Up `
+                    | Sort-Object ifIndex `
+                    | Select-Object -First 1 -Expand Name
             }
             Else { $overrideInterfaceName }
         )
 
-        $enabledInterfaces = Get-NetAdapter |`
-            Where-Object Status -ne "Disabled" |`
-            Where-Object Name -ne $primaryNetworkInterfaceName |`
-            Sort-Object Name
+        $enabledInterfaces = Get-NetAdapter `
+            | Where-Object Status -ne "Disabled" `
+            | Where-Object Name -ne $primaryNetworkInterfaceName `
+            | Sort-Object Name
         
         # The order of the virtual adapters vs the physical adapters matters
-        $hyperVInterfaces = $enabledInterfaces |`
-            Where-Object InterfaceDescription -Match  "Hyper-V Virtual Ethernet Adapter*"
-        $hyperVInterfaceNames = $hyperVInterfaces |`
-            Select-Object -Expand Name
+        $hyperVInterfaces = $enabledInterfaces `
+            | Where-Object InterfaceDescription -Match  "Hyper-V Virtual Ethernet Adapter*"
+        $hyperVInterfaceNames = $hyperVInterfaces `
+            | Select-Object -Expand Name
 
-        $nonHyperVInterfaces = $enabledInterfaces |`
-            Where-Object InterfaceDescription -NotMatch "Hyper-V Virtual Ethernet Adapter*"
-        $nonHyperVInterfaceNames = $nonHyperVInterfaces |`
-            Select-Object -Expand Name
+        $nonHyperVInterfaces = $enabledInterfaces `
+            | Where-Object InterfaceDescription -NotMatch "Hyper-V Virtual Ethernet Adapter*"
+        $nonHyperVInterfaceNames = $nonHyperVInterfaces `
+            | Select-Object -Expand Name
 
         Write-Output "`nDungeon Defenders is open, disabling the following network intefaces:"
         Write-Output $hyperVInterfaceNames
@@ -108,7 +108,8 @@ Else {
         -OutVariable alreadyInstalled `
         | Out-Null
 
-    mkdir -Force $scriptDirPath | Out-Null
+    mkdir -Force $scriptDirPath `
+        | Out-Null
     Copy-Item $PSCommandPath $scriptPath
     
     If ($alreadyInstalled) {
