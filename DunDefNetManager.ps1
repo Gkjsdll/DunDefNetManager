@@ -10,6 +10,7 @@ $overrideInterfaceName = "<REPLACE_ME>"
 
 $scriptDirPath = "C:\DunDefScripts"
 $scriptPath = "$scriptDirPath\DunDefNetManager.ps1"
+$disabledAdaptersPath = "$scriptDirPath\DisabledAdapters"
 
 $taskName = "Dungeon Defenders Network Manager"
 
@@ -17,7 +18,40 @@ $taskName = "Dungeon Defenders Network Manager"
 # Set higher if you're getting the error, want to avoid it, and your machine takes longer to be re-create all HyperV virtual adapters 
 $waitSeconds = 15
 
+# Register & run task
+function Initialize-Task() {
+    $action = New-ScheduledTaskAction `
+        -Execute "powershell.exe" `
+        -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File $scriptPath"
+
+    $principal = New-ScheduledTaskPrincipal `
+        -UserID ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) `
+        -LogonType S4U `
+        -Id Author `
+        -RunLevel Highest
+
+    $settings = New-ScheduledTaskSettingsSet `
+        -AllowStartIfOnBatteries `
+        -DontStopIfGoingOnBatteries `
+        -ExecutionTimeLimit "00:00:00"
+
+    $trigger = New-ScheduledTaskTrigger -AtLogOn
+
+    Register-ScheduledTask -TaskName $taskName `
+        -Action $action `
+        -Description "Disables all non-primary network adapters while Dungeon Defenders is running to restore access to ranked multiplayer" `
+        -Principal $principal `
+        -Settings $settings `
+        -Trigger $trigger `
+    | Out-Null
+
+    Start-ScheduledTask -TaskName $taskName
+}
+
+
 function Invoke-Manager() {
+    Recover-Adapters
+
     While ($true) {
         Write-Output "Waiting for Dungeon Defenders to start..."
 
@@ -56,9 +90,12 @@ function Invoke-Manager() {
         Write-Output $nonHyperVInterfaceNames
 
         Disable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
-        $hyperVInterfaces `
-        | Out-File -FilePath
+        $hyperVInterfaceNames `
+        | Out-File -FilePath $disabledAdaptersPath
+        
         Disable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
+        $hyperVInterfaceNames + $nonHyperVInterfaceNames `
+        | Out-File -FilePath $disabledAdaptersPath
 
         Write-Output "`nWaiting for Dungeon Defenders to exit..."
 
@@ -66,68 +103,57 @@ function Invoke-Manager() {
 
         Write-Output "Dungeon Defenders has exited, re-enabling network interfaces"
         Enable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
+        $hyperVInterfaceNames `
+        | Out-File -FilePath $disabledAdaptersPath
         Start-Sleep $waitSeconds
         Enable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
+        Remove-Item -Path $disabledAdaptersPath
     }
 }
 
-# Register task &
-function Initialize-Task() {
-    $action = New-ScheduledTaskAction `
-        -Execute "powershell.exe" `
-        -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File $scriptPath"
-
-    $principal = New-ScheduledTaskPrincipal `
-        -UserID ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) `
-        -LogonType S4U `
-        -Id Author `
-        -RunLevel Highest
-
-    $settings = New-ScheduledTaskSettingsSet `
-        -AllowStartIfOnBatteries `
-        -DontStopIfGoingOnBatteries `
-        -ExecutionTimeLimit "00:00:00"
-
-    $trigger = New-ScheduledTaskTrigger -AtLogOn
-
-    Register-ScheduledTask -TaskName $taskName `
-        -Action $action `
-        -Description "Disables all non-primary network adapters while Dungeon Defenders is running to restore access to ranked multiplayer" `
-        -Principal $principal `
-        -Settings $settings `
-        -Trigger $trigger `
-    | Out-Null
-
-    Start-ScheduledTask -TaskName $taskName
-}
-
-If ($PSCommandPath -eq $scriptPath) {
-    Invoke-Manager
-}
-Else {
-    # Check if task already exists
-    Get-ScheduledTask -TaskName $taskName `
-        -ErrorAction SilentlyContinue `
-        -OutVariable taskExists `
-    | Out-Null
-
-    # Copy script to destintaion to install/update
-    mkdir -Force $scriptDirPath `
-    | Out-Null
-    Copy-Item $PSCommandPath $scriptPath
-    
-    # Stop & delete existing task
-    If ($taskExists) {
-        Stop-ScheduledTask -TaskName $taskName
-        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
-    }
-
-    Initialize-Task
-
-    If ($taskExists) {
-        Write-Output "Updated script and task"
+function Main() {
+    If ($PSCommandPath -eq $scriptPath) {
+        Invoke-Manager
     }
     Else {
-        Write-Output "Installed script as a task & started task"
+        # Check if task already exists
+        Get-ScheduledTask -TaskName $taskName `
+            -ErrorAction SilentlyContinue `
+            -OutVariable taskExists `
+        | Out-Null
+    
+        # Copy script to destintaion to install/update
+        mkdir -Force $scriptDirPath `
+        | Out-Null
+        Copy-Item $PSCommandPath $scriptPath
+        
+        # Stop & delete existing task
+        If ($taskExists) {
+            Stop-ScheduledTask -TaskName $taskName
+            Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
+        }
+    
+        Initialize-Task
+    
+        If ($taskExists) {
+            Write-Output "Updated script and task"
+        }
+        Else {
+            Write-Output "Installed script as a task & started task"
+        }
     }
 }
+
+function Recover-Adapters() {
+    If (Test-Path $disabledAdaptersPath) {
+        Return
+    }
+
+    $adapters = Get-Content -Path $disabledAdaptersPath
+    Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
+    Start-Sleep $waitSeconds
+    Enable-NetAdapter -Confirm:$false -Name $adapters | Out-Null
+    Remove-Item $disabledAdaptersPath
+}
+
+Main
