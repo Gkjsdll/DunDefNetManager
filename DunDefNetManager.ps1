@@ -17,7 +17,7 @@ $taskName = "Dungeon Defenders Network Manager"
 # Set higher if you're getting the error, want to avoid it, and your machine takes longer to be re-create all HyperV virtual adapters 
 $waitSeconds = 15
 
-function Run-DunDefNetManager() {
+function Invoke-DunDefNetManager() {
     While ($true) {
         Write-Output "Waiting for Dungeon Defenders to start..."
 
@@ -100,7 +100,7 @@ function Install-DunDefNetManager-Task() {
 }
 
 If ($PSCommandPath -eq $scriptPath) {
-    Run-DunDefNetManager
+    Invoke-DunDefNetManager
 }
 Else {
     Get-ScheduledTask -TaskName $taskName `
@@ -108,7 +108,7 @@ Else {
         -OutVariable alreadyInstalled `
         | Out-Null
 
-    md -Force $scriptDirPath | Out-Null
+    mkdir -Force $scriptDirPath | Out-Null
     Copy-Item $PSCommandPath $scriptPath
     
     If ($alreadyInstalled) {
