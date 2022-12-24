@@ -17,7 +17,7 @@ $taskName = "Dungeon Defenders Network Manager"
 # Set higher if you're getting the error, want to avoid it, and your machine takes longer to be re-create all HyperV virtual adapters 
 $waitSeconds = 15
 
-function Invoke() {
+function Invoke-Manager() {
     While ($true) {
         Write-Output "Waiting for Dungeon Defenders to start..."
 
@@ -28,28 +28,28 @@ function Invoke() {
         $primaryNetworkInterfaceName = $(
             If ($autoDetectPrimaryInterface) {
                 Get-NetAdapter `
-                    | Where-Object Status -eq Up `
-                    | Sort-Object ifIndex `
-                    | Select-Object -First 1 -Expand Name
+                | Where-Object Status -eq Up `
+                | Sort-Object ifIndex `
+                | Select-Object -First 1 -Expand Name
             }
             Else { $overrideInterfaceName }
         )
 
         $enabledInterfaces = Get-NetAdapter `
-            | Where-Object Status -ne "Disabled" `
-            | Where-Object Name -ne $primaryNetworkInterfaceName `
-            | Sort-Object Name
+        | Where-Object Status -ne "Disabled" `
+        | Where-Object Name -ne $primaryNetworkInterfaceName `
+        | Sort-Object Name
         
         # The order of the virtual adapters vs the physical adapters matters
         $hyperVInterfaces = $enabledInterfaces `
-            | Where-Object InterfaceDescription -Match  "Hyper-V Virtual Ethernet Adapter*"
+        | Where-Object InterfaceDescription -Match  "Hyper-V Virtual Ethernet Adapter*"
         $hyperVInterfaceNames = $hyperVInterfaces `
-            | Select-Object -Expand Name
+        | Select-Object -Expand Name
 
         $nonHyperVInterfaces = $enabledInterfaces `
-            | Where-Object InterfaceDescription -NotMatch "Hyper-V Virtual Ethernet Adapter*"
+        | Where-Object InterfaceDescription -NotMatch "Hyper-V Virtual Ethernet Adapter*"
         $nonHyperVInterfaceNames = $nonHyperVInterfaces `
-            | Select-Object -Expand Name
+        | Select-Object -Expand Name
 
         Write-Output "`nDungeon Defenders is open, disabling the following network intefaces:"
         Write-Output $hyperVInterfaceNames
@@ -57,7 +57,7 @@ function Invoke() {
 
         Disable-NetAdapter -Confirm:$false -Name $hyperVInterfaceNames
         $hyperVInterfaces `
-            | Out-File -FilePath
+        | Out-File -FilePath
         Disable-NetAdapter -Confirm:$false -Name $nonHyperVInterfaceNames
 
         Write-Output "`nWaiting for Dungeon Defenders to exit..."
@@ -72,7 +72,7 @@ function Invoke() {
 }
 
 # Register task &
-function Install-And-Start() {
+function Initialize-Task() {
     $action = New-ScheduledTaskAction `
         -Execute "powershell.exe" `
         -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File $scriptPath"
@@ -96,24 +96,24 @@ function Install-And-Start() {
         -Principal $principal `
         -Settings $settings `
         -Trigger $trigger `
-        | Out-Null
+    | Out-Null
 
     Start-ScheduledTask -TaskName $taskName
 }
 
 If ($PSCommandPath -eq $scriptPath) {
-    Invoke
+    Invoke-Manager
 }
 Else {
     # Check if task already exists
     Get-ScheduledTask -TaskName $taskName `
         -ErrorAction SilentlyContinue `
         -OutVariable taskExists `
-        | Out-Null
+    | Out-Null
 
     # Copy script to destintaion to install/update
     mkdir -Force $scriptDirPath `
-        | Out-Null
+    | Out-Null
     Copy-Item $PSCommandPath $scriptPath
     
     # Stop & delete existing task
@@ -122,7 +122,7 @@ Else {
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
     }
 
-    Install-And-Start
+    Initialize-Task
 
     If ($taskExists) {
         Write-Output "Updated script and task"
