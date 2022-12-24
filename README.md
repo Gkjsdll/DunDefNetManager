@@ -26,6 +26,8 @@ This script requires being run as administrator.
 
 Runs the script in-place without installing it.
 
+If already installed, make sure you first end & disable the installed script ([how to](https://www.makeuseof.com/disable-scheduled-tasks-windows-10/)).
+
 ## Advanced
 
 ### autoDetectPrimaryInterface
